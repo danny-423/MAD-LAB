@@ -1,0 +1,147 @@
+//main
+package com.example.xmljasonpro;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    Button btnparsexml,btnparsejson;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        btnparsexml=(Button) findViewById(R.id.but1);
+        btnparsejson=(Button) findViewById(R.id.but2);
+
+        btnparsejson.setOnClickListener(this);
+        btnparsexml.setOnClickListener(this);
+    }
+
+    @Override
+    public void onClick(View v) {
+        if(v.equals(btnparsejson))
+        {
+            Intent it=new Intent(this, MainActivity2.class);
+            it.putExtra("mode",1);
+            startActivity(it);
+        }
+        if(v.equals(btnparsexml))
+        {
+            Intent it=new Intent(this, MainActivity2.class);
+            it.putExtra("mode",2);
+            startActivity(it);
+        }
+    }
+}
+//main2
+package com.example.xmljasonpro;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.widget.TextView;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+public class MainActivity2 extends AppCompatActivity {
+TextView txtXml,txtJson;
+int mode=0;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main2);
+
+        txtXml=(TextView) findViewById(R.id.txt_Xml);
+        txtJson=(TextView) findViewById(R.id.txt_Json);
+
+        mode=getIntent().getIntExtra("mode",0);
+
+        if(mode==1)
+            parsejson();
+        else
+            parsexml();
+
+    }
+
+    private void parsexml()
+    {
+        try
+        {
+            InputStream is = getAssets().open("input.xml");
+            DocumentBuilderFactory db = DocumentBuilderFactory.newInstance();
+            DocumentBuilder b = db.newDocumentBuilder();
+            Document doc = b.parse(is);
+            Element e = doc.getDocumentElement();
+            e.normalize();
+
+            NodeList list = doc.getElementsByTagName("weather");
+            for (int i = 0; i < list.getLength(); i++) {
+                Node n = list.item(i);
+                if (n.getNodeType() == Node.ELEMENT_NODE) {
+                    Element e1 = (Element) n;
+                    txtXml.setText("city name: " + getValue("city_name", e1) + "\n");
+                    txtXml.append("Latitude: " + getValue("Latitude", e1) + "\n");
+                    txtXml.append("Longitude: " + getValue("Longitude", e1) + "\n");
+                    txtXml.append("Temperature: " + getValue("Temperature", e1) + "\n");
+                    txtXml.append("Humidity: " + getValue("Humidity", e1) + "\n");
+
+                }
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (ParserConfigurationException e) {
+            throw new RuntimeException(e);
+        } catch (SAXException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String getValue(String tag, Element e)
+    {
+      NodeList nl=e.getElementsByTagName(tag).item(0).getChildNodes();
+      Node node=nl.item(0);
+      return node.getNodeValue();
+    }
+
+    private void parsejson() {
+        try{
+            InputStream ip=getAssets().open("input.json");
+            byte[] data=new byte[ip.available()];
+            ip.read(data);
+            String read_data=new String(data);
+            JSONObject jo = new JSONObject(read_data);
+            JSONObject jo1=jo.getJSONObject("weather");
+            txtJson.setText("city_name:"+jo1.getString("city_name")+"\n");
+            txtJson.append("latitude:"+jo1.getString("Latitude")+"\n");
+            txtJson.append("longitude:"+jo1.getString("Longitude")+"\n");
+            txtJson.append("Temperature:"+jo1.getString("Temperature")+"\n");
+            txtJson.append("Humidity:"+jo1.getString("Humidity")+"\n");
+        }
+        catch (IOException | JSONException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+    }
+}
